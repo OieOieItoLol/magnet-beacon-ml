@@ -32,4 +32,5 @@ def signal_from_ab(
         atol=1e-12
     )
     """
-    ...
+    wt = omega * t
+    return a[:, None] * np.cos(wt)[None, :] + b[:, None] * np.sin(wt)[None, :]

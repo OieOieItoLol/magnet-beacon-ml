@@ -21,7 +21,7 @@ def euler_to_rotation(alpha: float, beta: float, gamma: float) -> Rotation:
     pre: True  # углы любые, периодичность обрабатывает scipy
     post: isinstance(__return__, Rotation)
     """
-    ...
+    return Rotation.from_euler('zyx', [gamma, beta, alpha])
 
 
 def rotation_to_euler(rot: Rotation) -> tuple[float, float, float]:
@@ -31,12 +31,14 @@ def rotation_to_euler(rot: Rotation) -> tuple[float, float, float]:
     post: len(__return__) == 3
     post: abs(__return__[0]) <= 3.14159265358979 + 1e-9  # alpha in [-π, π]
     """
-    ...
+    gamma, beta, alpha = rot.as_euler('zyx')
+    return alpha, beta, gamma
+
 
 def roundtrip_euler(alpha: float, beta: float, gamma: float) -> bool:
-    """
-    Проверяет roundtrip конвертацию углов через Rotation.
-    Возвращает True если углы совпали с точностью 1e-10.
+    """Проверка: euler → Rotation → euler ≈ identity (для использования в тестах).
+
+    Не часть публичного API; вспомогательная функция для контрактов.
     """
     rot = euler_to_rotation(alpha, beta, gamma)
     a, b, g = rotation_to_euler(rot)
@@ -45,10 +47,3 @@ def roundtrip_euler(alpha: float, beta: float, gamma: float) -> bool:
         math.isclose(beta, b, abs_tol=1e-10) and
         math.isclose(gamma, g, abs_tol=1e-10)
     )
-
-def roundtrip_euler(alpha: float, beta: float, gamma: float) -> bool:
-    """Проверка: euler → Rotation → euler ≈ identity (для использования в тестах).
-
-    Не часть публичного API; вспомогательная функция для контрактов.
-    """
-    ...
