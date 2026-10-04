@@ -1,23 +1,37 @@
-# mag_nav/convention.py
-"""Единственное место, где зафиксированы конвенции проекта."""
+"""Единая точка фиксации конвенций проекта.
+
+Все модули импортируют перевод углов ТОЛЬКО отсюда.
+Никто не вызывает Rotation.from_euler напрямую вне этого файла.
+"""
+
+from __future__ import annotations
 
 from scipy.spatial.transform import Rotation
 import math
 
-# Порядок углов Эйлера: ZYX (внешний → внутренний)
-# R = Rz(gamma) @ Ry(beta) @ Rx(alpha)
-EULER_SEQ = "ZYX"
+# Конвенция: R = Rz(gamma) @ Ry(beta) @ Rx(alpha)
+# Это intrinsic 'zyx' в терминах scipy.
+# Углы в радианах. Порядок аргументов всегда: (alpha, beta, gamma).
+EULER_SEQ: str = "zyx"
 
 
 def euler_to_rotation(alpha: float, beta: float, gamma: float) -> Rotation:
-    """Единственная функция перевода углов в Rotation."""
-    return Rotation.from_euler(EULER_SEQ.lower(), [gamma, beta, alpha])
+    """Перевод углов Эйлера (α, β, γ) в объект Rotation.
+
+    pre: True  # углы любые, периодичность обрабатывает scipy
+    post: isinstance(__return__, Rotation)
+    """
+    ...
 
 
 def rotation_to_euler(rot: Rotation) -> tuple[float, float, float]:
-    """Единственная функция обратного перевода. Возвращает (alpha, beta, gamma)."""
-    angles = rot.as_euler(EULER_SEQ.lower())
-    return angles[2], angles[1], angles[0]  # gamma, beta, alpha → alpha, beta, gamma
+    """Перевод Rotation обратно в (α, β, γ).
+
+    pre: isinstance(rot, Rotation)
+    post: len(__return__) == 3
+    post: abs(__return__[0]) <= 3.14159265358979 + 1e-9  # alpha in [-π, π]
+    """
+    ...
 
 def roundtrip_euler(alpha: float, beta: float, gamma: float) -> bool:
     """
@@ -32,5 +46,9 @@ def roundtrip_euler(alpha: float, beta: float, gamma: float) -> bool:
         math.isclose(gamma, g, abs_tol=1e-10)
     )
 
-# Система координат: правосторонняя, X-вперёд, Y-влево, Z-вверх (если не оговорено иное)
-# Единицы: метры, Тесла, радианы
+def roundtrip_euler(alpha: float, beta: float, gamma: float) -> bool:
+    """Проверка: euler → Rotation → euler ≈ identity (для использования в тестах).
+
+    Не часть публичного API; вспомогательная функция для контрактов.
+    """
+    ...

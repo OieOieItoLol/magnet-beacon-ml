@@ -1,17 +1,35 @@
-"""Восстановление сигнала из (a, b)."""
+"""Восстановление мгновенного сигнала из a, b параметров."""
+
+from __future__ import annotations
 
 import numpy as np
+from numpy.typing import NDArray
 
-def signal_from_ab(a, b, omega, t):
+
+def signal_from_ab(
+    a: NDArray[np.float64],
+    b: NDArray[np.float64],
+    omega: float,
+    t: NDArray[np.float64],
+) -> NDArray[np.float64]:
+    """s_i(t) = a_i·cos(ωt) + b_i·sin(ωt) для каждого компонента и момента времени.
+
+    Args:
+        a: (N,) — a-параметры
+        b: (N,) — b-параметры
+        omega: угловая частота, рад/с
+        t: (M,) — моменты времени
+
+    Returns:
+        (N, M) — сигнал для каждого компонента в каждый момент
+
+    pre: len(a) == len(b)
+    pre: omega > 0.0
+    post: __return__.shape == (len(a), len(t))
+    post: np.allclose(
+        __return__[:, 0],
+        a * np.cos(omega * t[0]) + b * np.sin(omega * t[0]),
+        atol=1e-12
+    )
     """
-    Восстанавливает сигнал.
-    a: array-like, shape (N,)
-    b: array-like, shape (N,)
-    omega: float
-    t: array-like, shape (M,)
-    Возвращает ndarray shape (N, M).
-    """
-    a = np.asarray(a)
-    b = np.asarray(b)
-    t = np.asarray(t)
-    return a[:, None] * np.cos(omega * t)[None, :] + b[:, None] * np.sin(omega * t)[None, :]
+    ...

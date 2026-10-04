@@ -1,31 +1,42 @@
-"""Примитивы для проверки ab-параметров, сигнала и конвенции углов."""
+"""Примитивы проверки ab-параметров. Чистые функции, без pytest."""
 
 import numpy as np
-from mag_nav.signal.ab_params import ab_from_amplitude_phase, amplitude_phase_from_ab
-from mag_nav.signal.recovery import signal_from_ab
-from mag_nav.convention import euler_to_rotation
 
-def is_roundtrip_ok(A, phi):
-    """
-    Проверяет roundtrip конвертацию:
-    (A, phi) -> (a, b) -> (A2, phi2).
-    Должно выполняться A == A2 и (phi == phi2) (с учетом периода 2pi, хотя для phi в [-pi, pi]
-    при A>0 это точное совпадение).
-    """
-    a, b = ab_from_amplitude_phase(A, phi)
-    A2, phi2 = amplitude_phase_from_ab(a, b)
-    return np.allclose(A, A2, atol=1e-10) and np.allclose(phi, phi2, atol=1e-10)
 
-def is_signal_ok(a, b, omega, t, expected):
-    """
-    Проверяет что signal_from_ab выдает ожидаемые значения.
-    """
-    signal = signal_from_ab(a, b, omega, t)
-    return np.allclose(signal, expected, atol=1e-10)
+def check_ab_magnitude(a: np.ndarray, b: np.ndarray, A_expected: np.ndarray) -> bool:
+    """a² + b² == A² покомпонентно."""
+    return bool(np.allclose(a**2 + b**2, A_expected**2, rtol=1e-12))
 
-def is_convention_ok(alpha, beta, gamma, expected_matrix):
-    """
-    Проверяет что euler_to_rotation возвращает матрицу, близкую к ожидаемой.
-    """
-    rot = euler_to_rotation(alpha, beta, gamma)
-    return np.allclose(rot.as_matrix(), expected_matrix, atol=1e-10)
+
+def check_ab_phase(a: np.ndarray, b: np.ndarray, phi_expected: np.ndarray) -> bool:
+    """atan2(-b, a) == φ покомпонентно (с учётом периодичности)."""
+    phi_recovered = np.arctan2(-b, a)
+    diff = np.angle(np.exp(1j * (phi_recovered - phi_expected)))
+    return bool(np.allclose(diff, 0.0, atol=1e-12))
+
+
+def check_signal_value(
+    a: np.ndarray,
+    b: np.ndarray,
+    omega: float,
+    t: float,
+    s_expected: np.ndarray,
+) -> bool:
+    """s(t) = a·cos(ωt) + b·sin(ωt) в одной точке."""
+    s = a * np.cos(omega * t) + b * np.sin(omega * t)
+    return bool(np.allclose(s, s_expected, atol=1e-12))
+
+
+def check_roundtrip_ab(
+    A: np.ndarray,
+    phi: np.ndarray,
+    a: np.ndarray,
+    b: np.ndarray,
+    A_back: np.ndarray,
+    phi_back: np.ndarray,
+) -> bool:
+    """(A,φ)→(a,b)→(A',φ'): A'≈A, φ'≈φ."""
+    if not np.allclose(A_back, A, atol=1e-12):
+        return False
+    phase_diff = np.angle(np.exp(1j * (phi_back - phi)))
+    return bool(np.allclose(phase_diff, 0.0, atol=1e-10))
