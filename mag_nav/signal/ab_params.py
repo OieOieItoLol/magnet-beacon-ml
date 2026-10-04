@@ -23,7 +23,9 @@ def ab_from_amplitude_phase(
     post: len(__return__[1]) == len(A)
     post: np.allclose(__return__[0]**2 + __return__[1]**2, A**2)
     """
-    ...
+    a = A * np.cos(phi)
+    b = -A * np.sin(phi)
+    return a, b
 
 
 def amplitude_phase_from_ab(
@@ -42,7 +44,9 @@ def amplitude_phase_from_ab(
         -__return__[0] * np.sin(__return__[1]), b, atol=1e-12
     )
     """
-    ...
+    A = np.sqrt(a**2 + b**2)
+    phi = np.arctan2(-b, a)
+    return A, phi
 
 
 def ab_roundtrip_check(
@@ -53,4 +57,10 @@ def ab_roundtrip_check(
 
     Не часть публичного API.
     """
-    ...
+    a, b = ab_from_amplitude_phase(A, phi)
+    A_prime, phi_prime = amplitude_phase_from_ab(a, b)
+    if not np.allclose(A_prime, A, atol=1e-12):
+        return False
+    # Check phases while considering 2pi wrap-around
+    phase_diff = np.angle(np.exp(1j * (phi_prime - phi)))
+    return bool(np.allclose(phase_diff, 0.0, atol=1e-10))
